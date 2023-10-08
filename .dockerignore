@@ -4,3 +4,5 @@ tmp
 .github
 Makefile
 README.md
+docker
+docker-compose.yml

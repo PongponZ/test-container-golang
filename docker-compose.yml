@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  api:
+    container_name: api
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile.air
+    volumes:
+      - ./:/app
+    environment:
+        PORT: ":8080"
+        MONGO_URI: "mongodb://root:root@mongodb:27017/"
+        MONGO_DATABASE: "test-container"
+    ports:
+      - 8080:8080
+    depends_on:
+      - mongodb
+    networks:
+      - test-container
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:4
+    environment:
+      MONGO_INITDB_DATABASE: "test-container"
+      MONGO_INITDB_ROOT_USERNAME: "root"
+      MONGO_INITDB_ROOT_PASSWORD: "root"
+    ports:
+      - 27017:27017
+    networks:
+      - test-container
+
+networks:
+  test-container:
+    driver: bridge

@@ -10,7 +10,11 @@ import (
 
 	"github.com/PongponZ/test-container-golang/cmd/api/handler"
 	"github.com/PongponZ/test-container-golang/config"
+	"github.com/PongponZ/test-container-golang/pkg/infra/database/mongodb"
+	"github.com/PongponZ/test-container-golang/pkg/repository"
+	"github.com/PongponZ/test-container-golang/pkg/usecase"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -20,12 +24,26 @@ func main() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 
-	indexHandler := handler.NewIndex()
-	todoHandler := handler.NewTodo()
+	// Create a context for the server
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	mongoClient := mongodb.NewConnect(ctx, cfg.MongoURI)
+	defer mongoClient.Disconnect(ctx)
+
+	db := mongoClient.GetDatabase(cfg.Database)
+
+	todoRepo := repository.NewToDo(db)
+	todoUsecase := usecase.NewToDo(todoRepo)
+	todoHandler := handler.NewTodo(todoUsecase)
 
 	server := echo.New()
-	server.GET("/", indexHandler.Index)
+	server.Use(middleware.Logger())
+	server.GET("/", handler.Index)
+	server.GET("/todo", todoHandler.Gets)
 	server.POST("/todo", todoHandler.Create)
+	server.PUT("/todo", todoHandler.Update)
+	server.DELETE("/todo/:id", todoHandler.Delete)
 
 	// start server
 	go func() {
@@ -34,14 +52,7 @@ func main() {
 		}
 	}()
 
-	// wait for SIGINT
-	<-sig
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer func() {
-		// extra handling here
-		cancel()
-	}()
+	<-sig // wait for SIGINT
 
 	if err := server.Shutdown(ctx); err != nil {
 		log.Fatalf("Server shutdown failed: %v\n", err)

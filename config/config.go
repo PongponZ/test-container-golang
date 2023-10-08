@@ -8,6 +8,7 @@ import (
 type Config struct {
 	Port     string `env:"PORT" envDefault:":4000"`
 	MongoURI string `env:"MONGO_URI,required"`
+	Database string `env:"MONGO_DATABASE,required"`
 }
 
 func New() Config {
