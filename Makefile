@@ -8,3 +8,6 @@ dev:
 
 test:
 	@go test -v ./...
+
+test-integration:
+	@go test -v -race ./... -tags=integration

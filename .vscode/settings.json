@@ -1,0 +1,7 @@
+{
+    "go.testOnSave": true,
+    "go.testFlags": [
+      "-v", "-race", "-tags=unit"
+    ],
+    "go.buildTags": "integration,unit"
+}
